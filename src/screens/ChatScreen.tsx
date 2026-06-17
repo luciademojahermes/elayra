@@ -1,20 +1,33 @@
 import React, { useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  ScrollView, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  StyleSheet,
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Alert,
+  Image,
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useElayraChat } from '../hooks/useElayraChat';
 import { ChatMessage } from '../types/elayra';
+import { clearAll } from '../services/storage';
 
-export default function ChatScreen() {
+interface ChatScreenProps {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    picture?: string;
+  };
+  onLogout: () => void;
+}
+
+export default function ChatScreen({ user, onLogout }: ChatScreenProps) {
   const { messages, isStreaming, sendMessage, stopStreaming, context } = useElayraChat();
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
@@ -29,6 +42,24 @@ export default function ChatScreen() {
       sendMessage(input);
       setInput('');
     }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Esci da Elayra?',
+      'La tua cronologia chat sarà salvata localmente.',
+      [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: 'Esci',
+          style: 'destructive',
+          onPress: async () => {
+            await clearAll();
+            onLogout();
+          },
+        },
+      ]
+    );
   };
 
   const renderMessage = (msg: ChatMessage, index: number) => {
@@ -65,7 +96,19 @@ export default function ChatScreen() {
           <Text style={styles.title}>Elayra</Text>
         </View>
         <View style={styles.headerRight}>
-          <Text style={styles.phase}>{context.ritualPhase}</Text>
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={handleLogout}
+          >
+            {user.picture ? (
+              <Image
+                source={{ uri: user.picture }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Text style={styles.avatarInitial}>{user.name?.[0]?.toUpperCase() || 'U'}</Text>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -81,7 +124,8 @@ export default function ChatScreen() {
           <View style={styles.welcomeContainer}>
             <Text style={styles.welcomeSymbol}>• ◯ △</Text>
             <Text style={styles.welcomeText}>
-              Ciao. Sono qui. Cosa porti oggi?
+              Ciao {user.name?.split(' ')[0] || 'viaggiatore'}.
+              Cosa porti oggi?
             </Text>
           </View>
         )}
@@ -107,7 +151,7 @@ export default function ChatScreen() {
             maxLength={2000}
             autoFocus
           />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.sendButton, isStreaming && styles.sendButtonDisabled]}
             onPress={isStreaming ? stopStreaming : handleSend}
             disabled={!input.trim() && !isStreaming}
@@ -123,24 +167,24 @@ export default function ChatScreen() {
 }
 
 const markdownStyles = StyleSheet.create({
-  text: { 
-    fontSize: 15, 
-    lineHeight: 22, 
+  text: {
+    fontSize: 15,
+    lineHeight: 22,
     color: '#f0ebe0',
   },
-  strong: { 
-    fontWeight: '600', 
-    color: '#f5f0e8' 
+  strong: {
+    fontWeight: '600',
+    color: '#f5f0e8',
   },
-  em: { 
-    fontStyle: 'italic', 
-    color: '#e8d5b7' 
+  em: {
+    fontStyle: 'italic',
+    color: '#e8d5b7',
   },
-  paragraph: { 
-    marginVertical: 8 
+  paragraph: {
+    marginVertical: 8,
   },
-  br: { 
-    marginVertical: 4 
+  br: {
+    marginVertical: 4,
   },
 });
 
@@ -174,16 +218,29 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   headerRight: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    backgroundColor: '#1a1a2e',
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  phase: {
-    fontSize: 11,
-    color: '#a09070',
-    textTransform: 'capitalize',
-    letterSpacing: 0.5,
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#1e2a3a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e8d5b7',
+  },
+  avatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  avatarInitial: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#e8d5b7',
   },
   messagesContainer: {
     flex: 1,
