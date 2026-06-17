@@ -33,10 +33,10 @@ export const useChatStore = create<ChatState>((set) => ({
 
   addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
   
-  updateLastMessage: (content) => set((state) => {
+  updateLastMessage: (content, streaming = true) => set((state) => {
     const msgs = [...state.messages];
     if (msgs.length > 0) {
-      msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content, isStreaming: false };
+      msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content, isStreaming: streaming };
     }
     return { messages: msgs };
   }),

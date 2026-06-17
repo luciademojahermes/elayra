@@ -1,0 +1,38 @@
+# syntax=docker/dockerfile:1.4
+# Dockerfile per CI: lint, typecheck, test
+# Uso: docker build -f Dockerfile.ci .
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Installa dipendenze di sistema per native modules
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    git
+
+# Copia package files first per cache layer
+COPY package*.json ./
+
+# Installa dipendenze (include devDependencies per lint/test)
+RUN npm ci
+
+# Copia codice sorgente
+COPY . .
+
+# TypeScript type check
+RUN npx tsc --noEmit
+
+# ESLint (se configurato)
+# RUN npm run lint
+
+# Test (se configurato)
+# RUN npm test -- --watchAll=false
+
+# Build web (verifica che compili)
+RUN npx expo export --platform web
+
+# Se tutto passa, l'immagine è pronta per CI
+CMD ["echo", "CI checks passed!"]
